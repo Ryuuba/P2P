@@ -15,17 +15,21 @@ NAPSTERPORT = 1024
 class Napster(object):
     """A simple NAPSTER server
        Attributes:
-       A dictionary named content storing <music, holder> pairs
-       A list porList keeping <holder, port> pairs
+       A dictionary named content storing <music, peerset> pairs
+       A list port_list keeping <holder, port> pairs
        """
     __content = {}
     __port_list = {}
+    __port = None
+    __host = None
+    __backlog = None
+    __listener = None
     #Initialization of server
     def __init__(self, backlog):
         self.__host = NAPSTERHOST
         self.__port = NAPSTERPORT
         self.__backlog = backlog
-        print repr(self.__host) + ' ' + repr(self.__port) + ' ' + repr(backlog)
+        print self.__host, ' ', self.__port, ' ', backlog
         self.__listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__listener.bind((self.__host, self.__port))
         self.__listener.listen(self.__backlog)
@@ -47,6 +51,7 @@ class Napster(object):
                 peerset = set([holder])
                 print peerset
                 self.__content[filename] = peerset
+
     def __send_ok(self, client_socket, client_addr):
         """Send a message OK to a client"""
         msg = HOK + str(self.__port_list[client_addr[0]])
@@ -66,7 +71,7 @@ class Napster(object):
     def __handler(self, client_socket, client_addr):
         """Method to be executed as a thread"""
         print "Thread ", thread.get_ident(), " is working"
-        time.sleep(10)
+        time.sleep(5)
         while 1:
             header = client_socket.recv(4)
             if not header:
@@ -92,6 +97,7 @@ class Napster(object):
 
     def accept(self):
         """Waits for incoming connections"""
+        self.__listener.settimeout(60)
         print "Waiting for connections. . ."
         client_socket, client_addr = self.__listener.accept()
         if client_addr[0] not in self.__port_list:
@@ -110,10 +116,6 @@ class Napster(object):
     def get_port(self):
         """Returns the port associated to the server process"""
         return self.__port
-
-    def get_client_addr(self):
-        """Returns a the pair (ip, port) associated to a client"""
-        return self.__client_addr
 
     def print_content(self):
         """Prints the dictionary content"""
